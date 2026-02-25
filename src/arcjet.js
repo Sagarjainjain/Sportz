@@ -1,25 +1,10 @@
 import arcjet, { detectBot, shield, slidingWindow } from "@arcjet/node";
 
 const arcjetKey = process.env.ARCJET_KEY;
-const arcjetMode = process.env.ARCJET_MODE === "DRY_RUN" ? "DRY_RUN" : "LIVE";
+const arcjetMode = process.env.ARCJECT_MODE === "DRY_RUN" ? "DRY_RUN" : "LIVE";
 
-if (!arcjetKey) throw new Error("ARCJET_KEY enviroment variable is missing");
+if (!arcjetKey) throw new Error("ARCJET_KEY environment variable is missing.");
 
-// export const httpArcjet = arcjetKey
-//   ? arcjet({
-//       key: arcjetKey,
-//       rules: [
-//         shield({
-//           mode: arcjetMode,
-//         }),
-//         detectBot({
-//           mode: arcjetMode,
-//           allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
-//         }),
-//         slidingWindow({ mode: arcjetMode, interval: "10s", max: 50 }),
-//       ],
-//     })
-//   : null;
 export const httpArcjet = arcjetKey
   ? arcjet({
       key: arcjetKey,
@@ -33,13 +18,12 @@ export const httpArcjet = arcjetKey
       ],
     })
   : null;
+
 export const wsArcjet = arcjetKey
   ? arcjet({
       key: arcjetKey,
       rules: [
-        shield({
-          mode: arcjetMode,
-        }),
+        shield({ mode: arcjetMode }),
         detectBot({
           mode: arcjetMode,
           allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
@@ -50,24 +34,98 @@ export const wsArcjet = arcjetKey
   : null;
 
 export function securityMiddleware() {
-    return async(req, res, next) => {
-        if(!httpArcjet) return next();
-        
-        try {
-            const decision = await httpArcjet.protect(req);
+  return async (req, res, next) => {
+    if (!httpArcjet) return next();
 
-            if(decision.isDenied()) {
-                if(decision.reason.isRateLimit()) {
-                    return res.status(429).json({ error: 'Too many Request.'})
+    try {
+      const decision = await httpArcjet.protect(req);
 
-                }
-                return res.status(403).json({error: 'Forbidden.'});
-            }
-        } catch (error) {
-            console.log('Arcjet Middleware error', error);
-            return res.status(503).json({error: 'Services Unavailable'});
+      if (decision.isDenied()) {
+        if (decision.reason.isRateLimit()) {
+          return res.status(429).json({ error: "Too many requests." });
         }
 
-        next();
+        return res.status(403).json({ error: "Forbidden." });
+      }
+    } catch (e) {
+      console.error("Arcjet middleware error", e);
+      return res.status(503).json({ error: "Service Unavailable" });
     }
+
+    next();
+  };
 }
+
+// import arcjet, { detectBot, shield, slidingWindow } from "@arcjet/node";
+
+// const arcjetKey = process.env.ARCJET_KEY;
+// const arcjetMode = process.env.ARCJET_MODE === "DRY_RUN" ? "DRY_RUN" : "LIVE";
+
+// if (!arcjetKey) throw new Error("ARCJET_KEY enviroment variable is missing");
+
+// // export const httpArcjet = arcjetKey
+// //   ? arcjet({
+// //       key: arcjetKey,
+// //       rules: [
+// //         shield({
+// //           mode: arcjetMode,
+// //         }),
+// //         detectBot({
+// //           mode: arcjetMode,
+// //           allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
+// //         }),
+// //         slidingWindow({ mode: arcjetMode, interval: "10s", max: 50 }),
+// //       ],
+// //     })
+// //   : null;
+// export const httpArcjet = arcjetKey
+//   ? arcjet({
+//       key: arcjetKey,
+//       rules: [
+//         shield({ mode: arcjetMode }),
+//         detectBot({
+//           mode: arcjetMode,
+//           allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
+//         }),
+//         slidingWindow({ mode: arcjetMode, interval: "10s", max: 50 }),
+//       ],
+//     })
+//   : null;
+// export const wsArcjet = arcjetKey
+//   ? arcjet({
+//       key: arcjetKey,
+//       rules: [
+//         shield({
+//           mode: arcjetMode,
+//         }),
+//         detectBot({
+//           mode: arcjetMode,
+//           allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:PREVIEW"],
+//         }),
+//         slidingWindow({ mode: arcjetMode, interval: "2s", max: 5 }),
+//       ],
+//     })
+//   : null;
+
+// export function securityMiddleware() {
+//     return async(req, res, next) => {
+//         if(!httpArcjet) return next();
+
+//         try {
+//             const decision = await httpArcjet.protect(req);
+
+//             if(decision.isDenied()) {
+//                 if(decision.reason.isRateLimit()) {
+//                     return res.status(429).json({ error: 'Too many Request.'})
+
+//                 }
+//                 return res.status(403).json({error: 'Forbidden.'});
+//             }
+//         } catch (error) {
+//             console.log('Arcjet Middleware error', error);
+//             return res.status(503).json({error: 'Services Unavailable'});
+//         }
+
+//         next();
+//     }
+// }
